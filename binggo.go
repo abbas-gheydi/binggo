@@ -30,6 +30,7 @@ func init() {
 	err := mkdir()
 	if err != nil {
 		log.Println(err)
+		os.Exit(1)
 	}
 }
 
@@ -96,8 +97,9 @@ func download(name string, url string) error {
 		return err
 	}
 
-	//save data to disk
 	defer image.Close()
+
+	//save data to disk
 	_, err = io.Copy(image, response.Body)
 	log.Println("wallpaper is saved to", imageOndisk)
 
@@ -107,22 +109,25 @@ func download(name string, url string) error {
 func mkdir() error {
 
 	info, err := os.Stat(imageFolder)
-
+	// try to create folder
 	if os.IsNotExist(err) {
-		err = nil
+
 		mkdir_err := os.Mkdir(imageFolder, 0755)
-		if err == nil {
+		if mkdir_err == nil {
 			log.Println(imageFolder, "created")
-		}
-		if mkdir_err != nil {
-			log.Println(mkdir_err)
+			return nil
+		} else {
 			return mkdir_err
 
 		}
-	} else if !info.IsDir() {
+	}
+
+	// if there is a file withe same folder name in the path
+	if err == nil && !info.IsDir() {
 		err = errors.New(fmt.Sprint(imageFolder, " is not a folder"))
 		return err
 	}
+
 	return err
 
 }
