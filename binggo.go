@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -35,6 +36,8 @@ func init() {
 }
 
 func main() {
+	distro := flag.String("os", "raspbian", "raspbian or ubuntu")
+	flag.Parse()
 
 	exitOnError := func(err error) {
 		log.Println(err)
@@ -54,14 +57,46 @@ func main() {
 
 	}
 
-	err = setWallpaper(imageName)
-	if err != nil {
-		exitOnError(err)
+	switch *distro {
+	case "raspbian":
 
+		err = setWallpaper(imageName)
+		if err != nil {
+			exitOnError(err)
+
+		}
+	case "ubuntu":
+		{
+
+			err = setWallpaperUbuntu(imageName)
+			if err != nil {
+				exitOnError(err)
+
+			}
+		}
 	}
 
 }
 
+func setWallpaperUbuntu(wallpaper string) error {
+	app := "gsettings"
+	arg0 := "set"
+	arg1 := "org.gnome.desktop.background"
+	arg2 := "picture-uri"
+	arg3 := "file://" + imageFolder + "/" + wallpaper
+	cmd := exec.Command(app, arg0, arg1, arg2, arg3)
+
+	stdout, err := cmd.Output()
+	if err != nil {
+		return err
+	}
+	if string(stdout) != "" {
+		log.Println(string(stdout))
+	}
+	log.Println("wallpaper changed to", arg3)
+	return nil
+
+}
 func setWallpaper(wallpaper string) error {
 	app := "pcmanfm"
 	arg0 := "--set-wallpaper"
