@@ -30,8 +30,8 @@ var (
 func init() {
 	err := mkdir()
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
+
 	}
 }
 
@@ -39,21 +39,16 @@ func main() {
 	distro := flag.String("os", "raspbian", "raspbian or ubuntu")
 	flag.Parse()
 
-	exitOnError := func(err error) {
-		log.Println(err)
-		os.Exit(1)
-	}
-
 	// connect to bing api and get image url
 	imageUrl, imageName, err := get_image_name_url()
 	if err != nil {
-		exitOnError(err)
+		log.Fatal(err)
 
 	}
 
 	err = download(imageName, imageUrl)
 	if err != nil {
-		exitOnError(err)
+		log.Fatal(err)
 
 	}
 
@@ -62,7 +57,7 @@ func main() {
 
 		err = setWallpaper(imageName)
 		if err != nil {
-			exitOnError(err)
+			log.Fatal(err)
 
 		}
 	case "ubuntu":
@@ -70,7 +65,7 @@ func main() {
 
 			err = setWallpaperUbuntu(imageName)
 			if err != nil {
-				exitOnError(err)
+				log.Fatal(err)
 
 			}
 		}
