@@ -1,3 +1,2 @@
-module Abbas-gheydi/binggo
-
+module github.com/Abbas-gheydi/binggo
 go 1.17
