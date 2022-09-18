@@ -1,9 +1,22 @@
 # BingGO
 ## About The Project
-BingGo downloads and sets www.bing.com daily images to your Raspberry pi wallpaper.   
+BingGo downloads and sets www.bing.com daily images to your Raspberry pi wallpaper and all major desktops.   
+## Supported desktops
 
+* Raspbian
+* Windows
+* macOS
+* GNOME
+* KDE
+* Cinnamon
+* Unity
+* Budgie
+* XFCE
+* LXDE
+* MATE
+* Deepin
 ### How to Install
-Download [BingGo](https://github.com/Abbas-gheydi/binggo/releases) (for arm cpu) and install it by:  
+Download [BingGo](https://github.com/Abbas-gheydi/binggo/releases) and install it by:  
 ```bash
 sudo install ./binggo /usr/local/bin/
 ```
