@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/reujab/wallpaper"
@@ -23,7 +25,13 @@ func main() {
 		log.Fatal(err)
 
 	}
+
 	log.Println(imageName)
+
+	if strings.Contains(os.Getenv("XDG_DATA_DIRS"), "xfce") {
+		wallpaper.Desktop = "XFCE"
+
+	}
 	err = wallpaper.SetFromURL(imageUrl)
 	if err != nil {
 		log.Fatal(err)
