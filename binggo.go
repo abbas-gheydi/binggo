@@ -24,12 +24,12 @@ const (
 
 func main() {
 	// Fetch the image URL and name
-	imageURL, imageName, err := getImageNameURL()
+	imageURL, imageTitle, err := getImageNameURL()
 	if err != nil {
 		logAndExitWithRed(err.Error())
 	}
 
-	logWithGreen(fmt.Sprintf("This image will be set as wallpaper: %s", imageName))
+	logWithGreen(fmt.Sprintf("This image will be set as wallpaper: %s", imageTitle))
 
 	// Check if the environment is XFCE and adjust wallpaper setting accordingly
 	if strings.Contains(os.Getenv("XDG_DATA_DIRS"), "xfce") {
@@ -48,7 +48,7 @@ func main() {
 		logAndExitWithRed(fmt.Sprintf("Error setting wallpaper: %v", err))
 	}
 
-	logWithGreen(fmt.Sprintf("Wallpaper set to: %s", imageName))
+	logWithGreen(fmt.Sprintf("Wallpaper set to: %s", imageTitle))
 }
 
 // logAndExitWithRed logs a message in red and exits the program.
@@ -87,9 +87,9 @@ func getImageNameURL() (string, string, error) {
 	}
 
 	imageURL := fmt.Sprintf("https://www.bing.com%s", response.Images[0].URL)
-	imageName := fmt.Sprintf("%s.jpg", response.Images[0].Title)
+	imageTitle := fmt.Sprintf("%s.jpg", response.Images[0].Title)
 
-	return imageURL, imageName, nil
+	return imageURL, imageTitle, nil
 }
 
 // getBingResponse fetches and unmarshals the response from Bing's API.
