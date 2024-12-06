@@ -3,15 +3,16 @@ name: Build and Release Go Binaries
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags (e.g., v1.0.0)
+      - 'v*' 
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]  # Target platforms
-        arch: [amd64, arm64, 386, arm]  # Target architectures for specific platforms
+        os: [linux, windows, darwin] 
+        arch: [386,arm]  
+        darwin-arch: [386,arm64]
     
     steps:
       - name: Checkout code
@@ -20,34 +21,25 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.20'  # Set the Go version (change to your preferred version)
+          go-version: '1.20' 
 
       - name: Install dependencies
         run: go mod tidy
 
       - name: Build the Go binary
         run: |
-          GOOS=${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }}
-          GOARCH=${{ matrix.arch }}
+           if [ "${{ matrix.os }}" != "darwin" ]; then
+            GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o binggo-${{ matrix.os }}-${{ matrix.arch }} main.go
+           else [ "${{ matrix.os }}" == "darwin" ]; then
+            GOOS=${{ matrix.os }} GOARCH=${{ matrix.darwin-arch }} go build -o binggo-${{ matrix.os }}-${{ matrix.arch }} main.go
 
-          # Skip invalid combinations:
-          # Exclude unsupported darwin/386 and windows/arm64
-          if [[ "$GOOS" == "darwin" && "$GOARCH" == "386" ]] || [[ "$GOOS" == "windows" && "$GOARCH" == "arm64" ]]; then
-            echo "Skipping unsupported $GOOS/$GOARCH build"
-            exit 0
-          fi
 
-          OUTPUT_NAME="myapp-${GOOS}-${GOARCH}"
-
-          # Build the Go binary for the target platform and architecture
-          GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTPUT_NAME
-
-      - name: Upload the binary as an artifact
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-${{ matrix.arch }}
-          path: myapp-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }}-${{ matrix.arch }}
-
+          name: go-build-artifacts
+          path: |
+            binggo-*
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -59,12 +51,13 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./myapp-linux-386
-            ./myapp-linux-amd64
-            ./myapp-linux-arm
-            ./myapp-linux-arm64
-            ./myapp-darwin-amd64
-            ./myapp-darwin-arm64
-            ./myapp-win-386.exe
+            binggo-linux-arm
+            binggo-linux-386
+            binggo-windows-arm.exe
+            binggo-windows-386.exe
+            binggo-darwin-arm64
+            binggo-darwin-386
+
+
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub automatically creates this secret for authentication
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
