@@ -1,0 +1,65 @@
+name: Build and Release Go Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags (e.g., v1.0.0)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]  # Target platforms
+        arch: [amd64, arm64, 386]  # Target architectures
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.20'  # Set the Go version (change to your preferred version)
+        
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Build the Go binary
+        run: |
+          GOOS=${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }}
+          GOARCH=${{ matrix.arch }}
+          OUTPUT_NAME="myapp-${GOOS}-${GOARCH}"
+          
+          # Build the Go binary
+          GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTPUT_NAME
+
+      - name: Upload the binary as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}-${{ matrix.arch }}
+          path: myapp-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }}-${{ matrix.arch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create a new GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./myapp-linux-amd64
+            ./myapp-linux-arm64
+            ./myapp-linux-386
+            ./myapp-darwin-amd64
+            ./myapp-darwin-arm64
+            ./myapp-darwin-386
+            ./myapp-win-amd64.exe
+            ./myapp-win-arm64.exe
+            ./myapp-win-386.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub automatically creates this secret for authentication
+
