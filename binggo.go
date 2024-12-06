@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,96 +16,113 @@ import (
 )
 
 const (
-	bingAddress    string = "https://www.bing.com/"
-	bingApiAddress string = bingAddress + "HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
-	Green                 = "\033[32m"
-	Red                   = "\033[31m"
-	ResetColor            = "\033[0m"
+	bingAPIURL = "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
+	greenColor = "\033[32m"
+	redColor   = "\033[31m"
+	resetColor = "\033[0m"
 )
 
 func main() {
-
-	imageUrl, imageName, err := get_image_name_url()
+	// Fetch the image URL and name
+	imageURL, imageName, err := getImageNameURL()
 	if err != nil {
-		logRedAndExit(err.Error())
-
+		logAndExitWithRed(err.Error())
 	}
 
-	logGreen("this image will be sets as s wallpaper: " + imageName)
+	logWithGreen(fmt.Sprintf("This image will be set as wallpaper: %s", imageName))
 
+	// Check if the environment is XFCE and adjust wallpaper setting accordingly
 	if strings.Contains(os.Getenv("XDG_DATA_DIRS"), "xfce") {
 		wallpaper.Desktop = "XFCE"
-
 	}
-	// Check if the OS is Darwin (macOS)
+
+	// If the OS is macOS (Darwin), reset the wallpaper first
 	if runtime.GOOS == "darwin" {
-		if err := exec.Command("osascript", "-e", `tell application "System Events" to tell every desktop to set picture to "DEFAULT"`).Run(); err != nil {
-			logRedAndExit("could not set wallpaper to default" + err.Error())
+		if err := resetMacWallpaper(); err != nil {
+			logAndExitWithRed(fmt.Sprintf("Could not reset macOS wallpaper: %v", err))
 		}
-
 	}
 
-	err = wallpaper.SetFromURL(imageUrl)
-	if err != nil {
-		logRedAndExit(err.Error())
+	// Set the wallpaper from the image URL
+	if err := wallpaper.SetFromURL(imageURL); err != nil {
+		logAndExitWithRed(fmt.Sprintf("Error setting wallpaper: %v", err))
 	}
-	logGreen("the wallpaper is set to: " + imageName)
 
+	logWithGreen(fmt.Sprintf("Wallpaper set to: %s", imageName))
 }
 
-func logRedAndExit(message string) {
-	log.Println(Red + message + ResetColor)
+// logAndExitWithRed logs a message in red and exits the program.
+func logAndExitWithRed(message string) {
+	log.Println(redColor + message + resetColor)
 	os.Exit(1)
 }
 
-func logGreen(message string) {
-	log.Println(Green + message + ResetColor)
+// logWithGreen logs a message in green.
+func logWithGreen(message string) {
+	log.Println(greenColor + message + resetColor)
 }
 
-func downloadJson() (json []byte, err error) {
-	curl := http.Client{Timeout: time.Second * 10}
-	resp, err := curl.Get(bingApiAddress)
+// fetchJSON makes an HTTP GET request to the Bing API and returns the response JSON.
+func fetchJSON() ([]byte, error) {
+	client := http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(bingAPIURL)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to fetch Bing API: %w", err)
 	}
 	defer resp.Body.Close()
-	jsonfile, err := ioutil.ReadAll(resp.Body)
-	return jsonfile, err
 
-}
-
-func get_image_name_url() (image_url string, image_name string, err error) {
-	res, err := Bing_Response{}.receive()
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	image_url = fmt.Sprint(bingAddress, res.Images[0].URL)
-	image_name = fmt.Sprint(res.Images[0].Title, ".jpg")
 
-	return
+	return data, nil
 }
 
-type images struct {
+// getImageNameURL fetches the image URL and name from Bing's API response.
+func getImageNameURL() (string, string, error) {
+	response, err := getBingResponse()
+	if err != nil {
+		return "", "", err
+	}
+
+	imageURL := fmt.Sprintf("https://www.bing.com%s", response.Images[0].URL)
+	imageName := fmt.Sprintf("%s.jpg", response.Images[0].Title)
+
+	return imageURL, imageName, nil
+}
+
+// getBingResponse fetches and unmarshals the response from Bing's API.
+func getBingResponse() (BingResponse, error) {
+	data, err := fetchJSON()
+	if err != nil {
+		return BingResponse{}, err
+	}
+
+	var response BingResponse
+	if err := json.Unmarshal(data, &response); err != nil {
+		return BingResponse{}, fmt.Errorf("failed to unmarshal Bing API response: %w", err)
+	}
+
+	return response, nil
+}
+
+// resetMacWallpaper resets the macOS wallpaper to the default.
+func resetMacWallpaper() error {
+	cmd := exec.Command("osascript", "-e", `tell application "System Events" to tell every desktop to set picture to "DEFAULT"`)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to execute AppleScript command: %w", err)
+	}
+	return nil
+}
+
+// BingResponse represents the structure of the JSON response from Bing's API.
+type BingResponse struct {
+	Images []Image `json:"images"`
+}
+
+// Image represents each image object in the Bing API response.
+type Image struct {
 	URL   string `json:"url"`
 	Title string `json:"title"`
-}
-
-type Bing_Response struct {
-	Images []images `json:"images"`
-}
-
-func (b Bing_Response) receive() (res Bing_Response, err error) {
-
-	data, err := downloadJson()
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(data, &res)
-	if err != nil {
-		return
-	}
-
-	return
-
 }
