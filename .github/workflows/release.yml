@@ -35,7 +35,7 @@ jobs:
           GOOS=$GOOS GOARCH=$GOARCH go build -o $OUTPUT_NAME
 
       - name: Upload the binary as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.os }}-${{ matrix.arch }}
           path: myapp-${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'macos-latest' && 'darwin' || 'windows' }}-${{ matrix.arch }}
@@ -62,4 +62,3 @@ jobs:
             ./myapp-win-386.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub automatically creates this secret for authentication
-
