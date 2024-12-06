@@ -51,14 +51,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./myapp-linux-amd64
-            ./myapp-linux-arm64
+            ./myapp-linux-arm
             ./myapp-linux-386
             ./myapp-darwin-amd64
             ./myapp-darwin-arm64
-            ./myapp-darwin-386
-            ./myapp-win-amd64.exe
-            ./myapp-win-arm64.exe
             ./myapp-win-386.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub automatically creates this secret for authentication
