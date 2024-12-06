@@ -30,8 +30,9 @@ jobs:
         run: |
            if [ "${{ matrix.os }}" != "darwin" ]; then
             GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o binggo-${{ matrix.os }}-${{ matrix.arch }} main.go
-           else [ "${{ matrix.os }}" == "darwin" ]; then
+           else
             GOOS=${{ matrix.os }} GOARCH=${{ matrix.darwin-arch }} go build -o binggo-${{ matrix.os }}-${{ matrix.arch }} main.go
+           fi
 
 
       - name: Upload Build Artifacts
